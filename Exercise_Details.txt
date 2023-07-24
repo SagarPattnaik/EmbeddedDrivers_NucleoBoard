@@ -1,12 +1,20 @@
-USE HSE Clock as input clock source
+Write an application to generate HCLK frequencies 50,84,120Mhz.
+Use HSI as PLL's input source and repeat the same using HSE as 
+input clock source.
 
-HSE clock is supplied by STLINK circuitry through MCO output pin which is coming from PIN PA8
-PA8 (STLINK)-> OSC_IN (STM32F446RE) 
-
-Using HSE Configure the SYSCLK as 8MHz
-AHB clock as 4MHz (HCLK)
-APB1 clock as 2MHz (PCLK1)
-APB2 clock as 2MHz (PCLK2)
-
-Clock Source-> HSE 8MHz-> SYSCLK 8MHz-> AHB prescaler 2-> HCLK 4MHz -> APB1 prescaler 2 -> 2MHz
-                                                                    -> APB2 prescaler 2 -> 2MHz
+Using HSI Configure the SYSCLK with following parameters.
+50Mhz:
+HSI 16Mhz-->PLLM as 16 + PLLN 100-->Fvco output 100MHz-->PLLP as 2-->
+SYSCLK 50Mhz--> AHB Prescaler 1--> HCLK 50Mhz-> APB1 prescaler 2 -> 25MHz
+                                             -> APB2 prescaler 2 -> 25MHz
+                                             -> Flash latency 1
+84Mhz:
+HSI 16Mhz-->PLLM as 16 + PLLN 168-->Fvco output 168MHz-->PLLP as 2-->
+SYSCLK 84Mhz--> AHB Prescaler 1--> HCLK 84Mhz-> APB1 prescaler 2 -> 42MHz
+                                             -> APB2 prescaler 2 -> 42MHz
+                                             -> Flash latency 2
+120Mhz:
+HSI 16Mhz-->PLLM as 16 + PLLN 240-->Fvco output 240MHz-->PLLP as 2-->
+SYSCLK 120Mhz--> AHB Prescaler 1--> HCLK 120Mhz-> APB1 prescaler 4 -> 30MHz
+                                               -> APB2 prescaler 2 -> 60MHz 
+                                               -> Flash latency 3                                           

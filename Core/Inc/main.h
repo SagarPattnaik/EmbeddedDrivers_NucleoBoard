@@ -74,7 +74,9 @@ void Error_Handler(void);
 #define SWO_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-
+#define SYS_CLOCK_FREQ_50_MHZ 50
+#define SYS_CLOCK_FREQ_84_MHZ 84
+#define SYS_CLOCK_FREQ_120_MHZ 120
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
