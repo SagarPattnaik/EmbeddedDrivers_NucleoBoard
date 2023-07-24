@@ -1,20 +1,24 @@
-Write an application to generate HCLK frequencies 50,84,120Mhz.
-Use HSI as PLL's input source and repeat the same using HSE as 
-input clock source.
+Use the basic timer to generate intterupt for every 100ms. 
+Toggle the GPIO or LED inside the Timer IRQ handler and 
+verify using logic analyzer.
 
-Using HSI Configure the SYSCLK with following parameters.
-50Mhz:
-HSI 16Mhz-->PLLM as 16 + PLLN 100-->Fvco output 100MHz-->PLLP as 2-->
-SYSCLK 50Mhz--> AHB Prescaler 1--> HCLK 50Mhz-> APB1 prescaler 2 -> 25MHz
-                                             -> APB2 prescaler 2 -> 25MHz
-                                             -> Flash latency 1
-84Mhz:
-HSI 16Mhz-->PLLM as 16 + PLLN 168-->Fvco output 168MHz-->PLLP as 2-->
-SYSCLK 84Mhz--> AHB Prescaler 1--> HCLK 84Mhz-> APB1 prescaler 2 -> 42MHz
-                                             -> APB2 prescaler 2 -> 42MHz
-                                             -> Flash latency 2
-120Mhz:
-HSI 16Mhz-->PLLM as 16 + PLLN 240-->Fvco output 240MHz-->PLLP as 2-->
-SYSCLK 120Mhz--> AHB Prescaler 1--> HCLK 120Mhz-> APB1 prescaler 4 -> 30MHz
-                                               -> APB2 prescaler 2 -> 60MHz 
-                                               -> Flash latency 3                                           
+We use basic Timer TIM6 for this. Use the following timer clock configuration.
+Input clock source --> HSI 16Mhz--> SYSCLK 16MHz--> AHB Prescaler 1 --> 
+HCLK 16Mhz -->APB1 Prescaler 1-->PCLK1    -->16Mhz
+                              -->x1->TIMER-->16Mhz
+What is the period value to get time base of 100ms?
+If prescaler = 0
+CNT_CLK = 16MHz
+time pet tick = 0.0625 micro second
+For 100ms period value ARR = 100ms/0.0625 = 1600000. 
+But our register can hold only upto 65536 which is 16 bit value.
+Hence we need prescaler to scale down CNT_CLK.
+
+If prescaler = 1
+CNT_CLK = 8MHz
+time pet tick = 0.125 micro second
+For 100ms period value ARR = 100ms/0.125 = 800000. 
+
+Please follow the excel sheet /Documents for more detailed calculation
+
+
