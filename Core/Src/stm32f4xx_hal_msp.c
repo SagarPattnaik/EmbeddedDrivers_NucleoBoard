@@ -1,5 +1,65 @@
-#include "stm32f4xx_hal.h"
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file         stm32f4xx_hal_msp.c
+  * @brief        This file provides code for the MSP Initialization
+  *               and de-Initialization codes.
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2023 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
+/* USER CODE END Header */
 
+/* Includes ------------------------------------------------------------------*/
+#include "main.h"
+/* USER CODE BEGIN Includes */
+
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN TD */
+
+/* USER CODE END TD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN Define */
+
+/* USER CODE END Define */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN Macro */
+
+/* USER CODE END Macro */
+
+/* Private variables ---------------------------------------------------------*/
+/* USER CODE BEGIN PV */
+
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+/* USER CODE BEGIN PFP */
+
+/* USER CODE END PFP */
+
+/* External functions --------------------------------------------------------*/
+/* USER CODE BEGIN ExternalFunctions */
+
+/* USER CODE END ExternalFunctions */
+
+/* USER CODE BEGIN 0 */
+
+/* USER CODE END 0 */
+/**
+  * Initializes the Global MSP.
+  */
 void HAL_MspInit(void)
 {
  //Here will do low level processor specific inits.
@@ -15,28 +75,20 @@ void HAL_MspInit(void)
 	HAL_NVIC_SetPriority(UsageFault_IRQn,0,0);
 }
 
-void HAL_UART_MspInit(UART_HandleTypeDef *huart)
+/**
+* @brief TIM_Base MSP Initialization
+* This function configures the hardware resources used in this example
+* @param htim_base: TIM_Base handle pointer
+* @retval None
+*/
+void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
 {
-  GPIO_InitTypeDef gpio_uart;
-  //here we are going to do the low level inits. of the USART2 peripheral
-  //1. enable the clock for the USART2 peripheral as well as for GPIOA peripheral
-  __HAL_RCC_USART2_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
 
-  //2 . Do the pin muxing configurations
-  /**USART2 GPIO Configuration
-  PA2     ------> USART2_TX
-  PA3     ------> USART2_RX
-  */
-  gpio_uart.Pin = GPIO_PIN_2|GPIO_PIN_3;
-  gpio_uart.Mode =GPIO_MODE_AF_PP;
-  gpio_uart.Pull = GPIO_PULLUP;
-  gpio_uart.Speed = GPIO_SPEED_FREQ_LOW;
-  gpio_uart.Alternate =  GPIO_AF7_USART2; //UART2_TX
-  HAL_GPIO_Init(GPIOA,&gpio_uart);
-
-  //3 . Enable the IRQ and set up the priority (NVIC settings )
-  HAL_NVIC_EnableIRQ(USART2_IRQn);
-  HAL_NVIC_SetPriority(USART2_IRQn,15,0);
 
 }
+
+
+
+/* USER CODE BEGIN 1 */
+
+/* USER CODE END 1 */
