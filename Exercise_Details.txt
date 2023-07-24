@@ -1,0 +1,12 @@
+USE HSE Clock as input clock source
+
+HSE clock is supplied by STLINK circuitry through MCO output pin which is coming from PIN PA8
+PA8 (STLINK)-> OSC_IN (STM32F446RE) 
+
+Using HSE Configure the SYSCLK as 8MHz
+AHB clock as 4MHz (HCLK)
+APB1 clock as 2MHz (PCLK1)
+APB2 clock as 2MHz (PCLK2)
+
+Clock Source-> HSE 8MHz-> SYSCLK 8MHz-> AHB prescaler 2-> HCLK 4MHz -> APB1 prescaler 2 -> 2MHz
+                                                                    -> APB2 prescaler 2 -> 2MHz

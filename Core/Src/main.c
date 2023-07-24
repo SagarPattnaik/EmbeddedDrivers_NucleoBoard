@@ -7,38 +7,68 @@
 
 #include "main.h"
 
-void SystemClockConfig(void);
 void UART2_Init(void);
 void Error_handler(void);
-uint8_t convert_to_capital(uint8_t data);
 
 UART_HandleTypeDef huart2;
-char *user_data = "The application is running\r\n";
-uint8_t data_buffer[100];
-uint8_t rcvd_data;
-uint32_t count=0;
-uint8_t reception_complete = 0;
 
 int main(void)
 {
+  RCC_OscInitTypeDef osc_init;
+  RCC_ClkInitTypeDef clk_init;
+  char msg[100];  
   HAL_Init();
-  SystemClockConfig();
   UART2_Init();
 
-  uint16_t len_of_data = strlen(user_data);
-  HAL_UART_Transmit(&huart2,(uint8_t*)user_data,len_of_data,HAL_MAX_DELAY);
-  while(reception_complete != 1)
+  memset(&osc_init,0,sizeof(osc_init));
+  osc_init.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  osc_init.HSEState = RCC_HSE_BYPASS;
+  if(HAL_RCC_OscConfig(&osc_init) != HAL_OK)
   {
-    HAL_UART_Receive_IT(&huart2,&rcvd_data,1);
+    Error_handler();
   }
 
+  clk_init.ClockType =      RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | \
+                            RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+  clk_init.SYSCLKSource =   RCC_SYSCLKSOURCE_HSE;
+  clk_init.AHBCLKDivider =  RCC_SYSCLK_DIV2;
+  clk_init.APB1CLKDivider = RCC_HCLK_DIV2;
+  clk_init.APB2CLKDivider = RCC_HCLK_DIV2;
+
+  if( HAL_RCC_ClockConfig(&clk_init, FLASH_ACR_LATENCY_0WS) != HAL_OK)
+  {
+    Error_handler();
+  }
+
+  /*------ AFTER THIS LINE SYSCLK is SOURCED BY HSE-------*/
+  /*HSI can be Disabled to save some current*/
+  __HAL_RCC_HSI_DISABLE(); 
+
+  /* Reconfigure Systick with new HCLK Clock of 4MHz */
+  HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
+  /* Configure the Prescaler value */
+  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
+
+  /* APB clock is changed to 2MHz so Initialize UART again */
+  UART2_Init();
+
+  memset(msg,0,sizeof(msg));
+  sprintf(msg,"SYSCLK : %ldHz\r\n",HAL_RCC_GetSysClockFreq());
+  HAL_UART_Transmit(&huart2,(uint8_t*)msg,strlen(msg),HAL_MAX_DELAY);
+
+  memset(msg,0,sizeof(msg));
+  sprintf(msg,"HCLK   : %ldHz\r\n",HAL_RCC_GetHCLKFreq());
+  HAL_UART_Transmit(&huart2,(uint8_t*)msg,strlen(msg),HAL_MAX_DELAY);
+
+  memset(msg,0,sizeof(msg));
+  sprintf(msg,"PCLK1  : %ldHz\r\n",HAL_RCC_GetPCLK1Freq());
+  HAL_UART_Transmit(&huart2,(uint8_t*)msg,strlen(msg),HAL_MAX_DELAY);
+
+  memset(msg,0,sizeof(msg));
+  sprintf(msg,"PCLK2  : %ldHz\r\n",HAL_RCC_GetPCLK2Freq());
+  HAL_UART_Transmit(&huart2,(uint8_t*)msg,strlen(msg),HAL_MAX_DELAY);
   while(1);
   return 0;
-}
-
-void SystemClockConfig(void)
-{
-  /* By default, the internal RC oscillator is configured to work at 16MHz */
 }
 
 void UART2_Init(void)
@@ -55,29 +85,6 @@ void UART2_Init(void)
 		//There is a problem
 		Error_handler();
 	}
-}
-
-uint8_t convert_to_capital(uint8_t data)
-{
-	if( data >= 'a' && data <= 'z')
-	{
-		data = data - ( 'a'- 'A');
-	}
-	return data;
-}
-
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-  if(rcvd_data == '\r')
-  {
-    reception_complete = 1;
-    data_buffer[count++]='\r';
-    HAL_UART_Transmit(huart,data_buffer,count,HAL_MAX_DELAY);
-  }
-  else
-  {
-    data_buffer[count++] = rcvd_data;
-  }
 }
 
 void Error_handler(void)

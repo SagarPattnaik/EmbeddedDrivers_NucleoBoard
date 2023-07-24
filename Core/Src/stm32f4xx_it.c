@@ -21,7 +21,6 @@
 #include "main.h"
 #include "stm32f4xx_it.h"
 
-extern UART_HandleTypeDef huart2;
 /**
   * @brief This function handles Hard fault interrupt.
   */
@@ -97,11 +96,6 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 1 */
 }
 
-void USART2_IRQHandler(void)
-{
-	HAL_UART_IRQHandler(&huart2);
-
-}
 /******************************************************************************/
 /* STM32F4xx Peripheral Interrupt Handlers                                    */
 /* Add here the Interrupt Handlers for the used peripherals.                  */
