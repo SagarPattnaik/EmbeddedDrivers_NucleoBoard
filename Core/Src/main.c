@@ -9,7 +9,7 @@
 #include "stm32f4xx_hal.h"
 #include "main.h"
 
-void SystemClockConfig(void);
+void SystemClockConfig(uint8_t clock_freq);
 void TIMER6_Init(void);
 void GPIO_Init(void);
 void Error_handler(void);
@@ -20,7 +20,7 @@ TIM_HandleTypeDef htimer6;
 int main(void)
 {
 	HAL_Init();
-	SystemClockConfig();
+	SystemClockConfig(SYS_CLOCK_FREQ_50_MHZ);
 	GPIO_Init();  
   TIMER6_Init();
 	//Lets start timer in IT mode
@@ -35,16 +35,97 @@ int main(void)
   * @brief System Clock Configuration
   * @retval None
   */
-void SystemClockConfig(void)
+void SystemClockConfig(uint8_t clock_freq )
 {
+	RCC_OscInitTypeDef Osc_Init;
+	RCC_ClkInitTypeDef Clock_Init;
+
+	Osc_Init.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+	Osc_Init.HSIState = RCC_HSI_ON;
+	Osc_Init.HSICalibrationValue = 16;
+	Osc_Init.PLL.PLLState = RCC_PLL_ON;
+	Osc_Init.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+
+	switch(clock_freq)
+	 {
+	  case SYS_CLOCK_FREQ_50_MHZ:
+		  Osc_Init.PLL.PLLM = 8;
+		  Osc_Init.PLL.PLLN = 50;
+		  Osc_Init.PLL.PLLP = RCC_PLLP_DIV2;
+		  Osc_Init.PLL.PLLQ = 2;
+		  Osc_Init.PLL.PLLR = 2;
+		  Clock_Init.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+	                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+		  Clock_Init.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+		  Clock_Init.AHBCLKDivider = RCC_SYSCLK_DIV1;
+		  Clock_Init.APB1CLKDivider = RCC_HCLK_DIV2;
+		  Clock_Init.APB2CLKDivider = RCC_HCLK_DIV1;
+	     break;
+
+	  case SYS_CLOCK_FREQ_84_MHZ:
+		  Osc_Init.PLL.PLLM = 8;
+		  Osc_Init.PLL.PLLN = 84;
+		  Osc_Init.PLL.PLLP = RCC_PLLP_DIV2;
+		  Osc_Init.PLL.PLLQ = 2;
+		  Osc_Init.PLL.PLLR = 2;
+		  Clock_Init.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+	                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+		  Clock_Init.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+		  Clock_Init.AHBCLKDivider = RCC_SYSCLK_DIV1;
+		  Clock_Init.APB1CLKDivider = RCC_HCLK_DIV2;
+		  Clock_Init.APB2CLKDivider = RCC_HCLK_DIV1;
+	     break;
+
+	  case SYS_CLOCK_FREQ_120_MHZ:
+		  Osc_Init.PLL.PLLM = 8;
+		  Osc_Init.PLL.PLLN = 120;
+		  Osc_Init.PLL.PLLP = RCC_PLLP_DIV2;
+		  Osc_Init.PLL.PLLQ = 2;
+		  Osc_Init.PLL.PLLR = 2;
+		  Clock_Init.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+	                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+		  Clock_Init.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+		  Clock_Init.AHBCLKDivider = RCC_SYSCLK_DIV1;
+		  Clock_Init.APB1CLKDivider = RCC_HCLK_DIV4;
+		  Clock_Init.APB2CLKDivider = RCC_HCLK_DIV2;
+	     break;
+
+	  default:
+	   return ;
+	 }
+
+		if (HAL_RCC_OscConfig(&Osc_Init) != HAL_OK)
+	{
+			Error_handler();
+	}
+
+
+
+	if (HAL_RCC_ClockConfig(&Clock_Init, FLASH_LATENCY_2) != HAL_OK)
+	{
+		Error_handler();
+	}
+
+
+	/*Configure the systick timer interrupt frequency (for every 1 ms) */
+	uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
+	HAL_SYSTICK_Config(hclk_freq/1000);
+
+	/**Configure the Systick
+	*/
+	HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
+
+	/* SysTick_IRQn interrupt configuration */
+	HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 
 }
+
 
 void TIMER6_Init(void)
 {
   htimer6.Instance = TIM6;
-	htimer6.Init.Prescaler = 24;
-	htimer6.Init.Period = 64000-1;
+	htimer6.Init.Prescaler = 9;
+	htimer6.Init.Period = 50-1;
 	if( HAL_TIM_Base_Init(&htimer6) != HAL_OK )
 	{
 		Error_handler();
