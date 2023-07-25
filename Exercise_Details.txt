@@ -21,4 +21,15 @@ For 100ms period value ARR = 100ms/0.125 = 800000.
 
 Please follow the excel sheet /Documents for more detailed calculation
 
+Here are the selected configuration for TIM6 100ms period
+HSI of 16MHz clock as Input Source 
+Prescaler = 24
+Period = 64000-1
+
+For Interrupt version Implementation, use the following steps.
+1. Remove the while implementation(blocking mode) and replace with HAL_TIM_Base_Start_IT
+2. Implement Interrupt Handler TIM6_DAC_IRQHandler in it.c file and call 
+Interrupt processing API  HAL_TIM_IRQHandler. 
+3. Implement callback function HAL_TIM_PeriodElapsedCallback in application
+4. Toggle GPIOA pin5 inside the callback function
 
