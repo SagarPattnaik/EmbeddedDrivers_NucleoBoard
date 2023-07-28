@@ -77,6 +77,9 @@ void Error_Handler(void);
 #define SYS_CLOCK_FREQ_84_MHZ 84
 #define SYS_CLOCK_FREQ_120_MHZ 120
 #define SYS_CLOCK_FREQ_180_MHZ 180
+
+#define TRUE 1
+#define FALSE 0
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

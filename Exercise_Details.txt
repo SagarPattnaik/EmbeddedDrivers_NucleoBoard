@@ -1,35 +1,23 @@
-Use the basic timer to generate intterupt for every 100ms. 
-Toggle the GPIO or LED inside the Timer IRQ handler and 
-verify using logic analyzer.
+To measure the time period of a signal using timer.
 
-We use basic Timer TIM6 for this. Use the following timer clock configuration.
-Input clock source --> HSI 16Mhz--> SYSCLK 16MHz--> AHB Prescaler 1 --> 
-HCLK 16Mhz -->APB1 Prescaler 1-->PCLK1    -->16Mhz
-                              -->x1->TIMER-->16Mhz
-What is the period value to get time base of 100ms?
-If prescaler = 0
-CNT_CLK = 16MHz
-time pet tick = 0.0625 micro second
-For 100ms period value ARR = 100ms/0.0625 = 1600000. 
-But our register can hold only upto 65536 which is 16 bit value.
-Hence we need prescaler to scale down CNT_CLK.
+1. Use LSE/HSI as input signal to timer
+LSE(32.765KHz)/HSI(16MHz) Input signal----->TIMER
 
-If prescaler = 1
-CNT_CLK = 8MHz
-time pet tick = 0.125 micro second
-For 100ms period value ARR = 100ms/0.125 = 800000. 
+2. To be able to use input signal to a timer, Basic timer doesnt provide any 
+input channel which is used to feed external signal to Timer. Use General Purpose
+Timer which has Input channel available. TIM2 to TIM5 and TIM9 to TIM14 are 
+general purpose timer.
 
-Please follow the excel sheet /Documents for more detailed calculation
+3. Configure PA0 to behave as TIM2_CH1 by using alternate function mode
 
-Here are the selected configuration for TIM6 100ms period
-HSI of 16MHz clock as Input Source 
-Prescaler = 24
-Period = 64000-1
+4. Configure LSE as input to TIMER2 to measure the frequency
+LSE(32.768KHz)----> PA0 ---->TIMER2
 
-For Interrupt version Implementation, use the following steps.
-1. Remove the while implementation(blocking mode) and replace with HAL_TIM_Base_Start_IT
-2. Implement Interrupt Handler TIM6_DAC_IRQHandler in it.c file and call 
-Interrupt processing API  HAL_TIM_IRQHandler. 
-3. Implement callback function HAL_TIM_PeriodElapsedCallback in application
-4. Toggle GPIOA pin5 inside the callback function
+Configure and activate LSE in one of the GPIO pin and use jumper wire to 
+provide clock PA0 (TIMER2_CH1). 
+Configure LSE to output the clock on MCO1 PA8
+
+MCO1(LSE(32.768KHz))-->PA8-->PA0(TIM2_CH1)-->TIMER2
+
+
 
