@@ -53,3 +53,11 @@ TIM2--> Channel1-->Ouput Compare CH1
 		PA1  --> TIM2_CH2 --> 1KHz
 		PB10 --> TIM2_CH3 --> 2KHz
 		PB2  --> TIM2_CH4 --> 4KHz  */
+
+*********************************** PWM Control ***********************************
+
+Bu ysing PWM Mode, generate PWM signals of 25%, 45%, 75% and 90% duty cycle on TIMER2's channel
+
+How to generate pulse value for 40% of Duty cycle
+Lets imagine Period = 1 second ARR = 10000
+Then Pulse = 40% of ARR = 4000

@@ -100,7 +100,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart)
 
 }
 
-void HAL_TIM_OC_MspInit(TIM_HandleTypeDef *htim)
+void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 {
 	GPIO_InitTypeDef tim2OC_ch_gpios;
 	/* 1. enable the peripheral clock for the timer2 peripheral */

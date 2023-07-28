@@ -25,6 +25,7 @@ volatile uint32_t pulse2_value = 12500; //to produce 1000HZ
 volatile uint32_t pulse3_value = 6250;  //to produce 2000Hz
 volatile uint32_t pulse4_value = 3125;  //to produce 4000Hz
 volatile uint32_t ccr_content;
+
 int main(void)
 {
   HAL_Init();
@@ -34,25 +35,25 @@ int main(void)
   UART2_Init();
   TIMER2_Init(); /* Initialize TIMER2 to Output Compare */
 
-	if( HAL_TIM_OC_Start_IT(&htimer2,TIM_CHANNEL_1) != HAL_OK)
-	{
-		Error_handler();
-	}
+  if ( HAL_TIM_PWM_Start(&htimer2,TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_handler();
+  }
 
-	if( HAL_TIM_OC_Start_IT(&htimer2,TIM_CHANNEL_2) != HAL_OK)
-	{
-		Error_handler();
-	}
+  if ( HAL_TIM_PWM_Start(&htimer2,TIM_CHANNEL_2) != HAL_OK)
+  {
+    Error_handler();
+  }
 
-	if( HAL_TIM_OC_Start_IT(&htimer2,TIM_CHANNEL_3) != HAL_OK)
-	{
-		Error_handler();
-	}
+  if ( HAL_TIM_PWM_Start(&htimer2,TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_handler();
+  }
 
-	if( HAL_TIM_OC_Start_IT(&htimer2,TIM_CHANNEL_4) != HAL_OK)
-	{
-		Error_handler();
-	}
+  if ( HAL_TIM_PWM_Start(&htimer2,TIM_CHANNEL_4) != HAL_OK)
+  {
+    Error_handler();
+  }
   while(1);
   return 0;
 }
@@ -162,70 +163,40 @@ void UART2_Init(void)
 
 void TIMER2_Init(void)
 {
-  TIM_OC_InitTypeDef tim2OC_init;
-
+  TIM_OC_InitTypeDef tim2PWM_Config;
   htimer2.Instance = TIM2;
-  htimer2.Init.Period = 0XFFFFFFFF;
-  htimer2.Init.Prescaler = 1;
-  if ( HAL_TIM_OC_Init(&htimer2) != HAL_OK)
-  {
-    Error_handler();
-  }
-  tim2OC_init.OCMode = TIM_OCMODE_TOGGLE;
-  tim2OC_init.OCPolarity = TIM_OCPOLARITY_HIGH;
-  tim2OC_init.Pulse  = pulse1_value;
-  if(HAL_TIM_OC_ConfigChannel(&htimer2,&tim2OC_init,TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_handler();
-  }
+  htimer2.Init.Period = 10000-1;
+  htimer2.Init.Prescaler = 4;
 
-  tim2OC_init.Pulse  = pulse2_value;
-  if(HAL_TIM_OC_ConfigChannel(&htimer2,&tim2OC_init,TIM_CHANNEL_2) != HAL_OK)
+  if ( HAL_TIM_PWM_Init(&htimer2) != HAL_OK)
   {
     Error_handler();
   }
+  memset(&tim2PWM_Config,0,sizeof(tim2PWM_Config));
+  tim2PWM_Config.OCMode = TIM_OCMODE_PWM1;
+  tim2PWM_Config.OCPolarity = TIM_OCPOLARITY_HIGH;
 
-  tim2OC_init.Pulse  = pulse3_value;
-  if(HAL_TIM_OC_ConfigChannel(&htimer2,&tim2OC_init,TIM_CHANNEL_3) != HAL_OK)
+  tim2PWM_Config.Pulse =  (htimer2.Init.Period * 25 ) /100;
+  if( HAL_TIM_PWM_ConfigChannel(&htimer2,&tim2PWM_Config,TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_handler();
+  }
+  tim2PWM_Config.Pulse =  (htimer2.Init.Period * 45 ) /100;
+  if( HAL_TIM_PWM_ConfigChannel(&htimer2,&tim2PWM_Config,TIM_CHANNEL_2) != HAL_OK)
   {
     Error_handler();
   }
 
-  tim2OC_init.Pulse  = pulse4_value;
-  if(HAL_TIM_OC_ConfigChannel(&htimer2,&tim2OC_init,TIM_CHANNEL_4) != HAL_OK)
+  tim2PWM_Config.Pulse =  (htimer2.Init.Period * 75 ) /100;
+  if( HAL_TIM_PWM_ConfigChannel(&htimer2,&tim2PWM_Config,TIM_CHANNEL_3) != HAL_OK)
   {
     Error_handler();
   }
-}
 
-void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  /* TIM3_CH1 toggling with frequency = 500 Hz */
-  if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
+  tim2PWM_Config.Pulse =  (htimer2.Init.Period * 95 ) /100;
+  if( HAL_TIM_PWM_ConfigChannel(&htimer2,&tim2PWM_Config,TIM_CHANNEL_4) != HAL_OK)
   {
-    ccr_content = HAL_TIM_ReadCapturedValue(htim,TIM_CHANNEL_1);
-    __HAL_TIM_SET_COMPARE(htim,TIM_CHANNEL_1,ccr_content+pulse1_value);
-  }
-
-  /* TIM3_CH2 toggling with frequency = 1000 Hz */
-  if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
-  {
-    ccr_content = HAL_TIM_ReadCapturedValue(htim,TIM_CHANNEL_2);
-    __HAL_TIM_SET_COMPARE(htim,TIM_CHANNEL_2,ccr_content+pulse2_value);
-  }
-
-  /* TIM3_CH3 toggling with frequency = 2000 Hz */
-  if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3)
-  {
-    ccr_content = HAL_TIM_ReadCapturedValue(htim,TIM_CHANNEL_3);
-    __HAL_TIM_SET_COMPARE(htim,TIM_CHANNEL_3,ccr_content+pulse3_value);
-  }
-
-  /* TIM3_CH4 toggling with frequency = 4000 Hz */
-  if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4)
-  {
-    ccr_content = HAL_TIM_ReadCapturedValue(htim,TIM_CHANNEL_4);
-    __HAL_TIM_SET_COMPARE(htim,TIM_CHANNEL_4,ccr_content+pulse4_value);
+    Error_handler();
   }
 }
 
