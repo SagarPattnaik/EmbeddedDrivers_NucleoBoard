@@ -20,4 +20,5 @@ Configure LSE to output the clock on MCO1 PA8
 MCO1(LSE(32.768KHz))-->PA8-->PA0(TIM2_CH1)-->TIMER2
 
 
-
+1. Configure Timer6 as 50KHz
+2. Connect PA5-->PA0
