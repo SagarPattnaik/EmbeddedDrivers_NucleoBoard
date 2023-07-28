@@ -317,7 +317,7 @@ void LSE_Configuration(void)
   }
   #endif
   /* Configure LSE to output the clock on MCO1 PA8 or MCO2 on PC9*/
-  HAL_RCC_MCOConfig(RCC_MCO1,RCC_MCO1SOURCE_LSE,RCC_MCODIV_1);
+  HAL_RCC_MCOConfig(RCC_MCO1,RCC_MCO1SOURCE_HSI,RCC_MCODIV_4);
 }
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
