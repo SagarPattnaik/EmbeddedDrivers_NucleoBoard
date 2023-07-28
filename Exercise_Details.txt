@@ -22,3 +22,28 @@ MCO1(LSE(32.768KHz))-->PA8-->PA0(TIM2_CH1)-->TIMER2
 
 1. Configure Timer6 as 50KHz
 2. Connect PA5-->PA0
+
+*************************** TIMER output COmpare Mode******************************
+Exercise:
+
+Write an application by using STM32 TIMER2 to produce square wave forms of 500KHz,
+1Khz, 2 Khz, and 4KHz on 4 different output channels
+
+ _______________________
+|                       |
+|                       |      TIM2_CH1 500Hz
+|                       |------------------------>
+|                       |
+|                       |      TIM2_CH2 1KHz
+|                       |------------------------>
+|         TIMER2        |
+|                       |      TIM2_CH3 2KHz
+|                       |------------------------>
+|                       |
+|                       |      TIM2_CH4 4KHz
+|                       |------------------------>
+|                       |
+|_______________________|                   
+
+To have driver files for Timer output compare channel, configure the following.
+TIM2--> Channel1-->Ouput Compare CH1
