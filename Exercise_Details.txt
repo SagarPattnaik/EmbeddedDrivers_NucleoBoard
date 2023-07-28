@@ -47,3 +47,9 @@ Write an application by using STM32 TIMER2 to produce square wave forms of 500KH
 
 To have driver files for Timer output compare channel, configure the following.
 TIM2--> Channel1-->Ouput Compare CH1
+
+	/* 2. Configure gpios to behave as timer2 channel 1,2,3 and 4 */
+	/* 	PA0  --> TIM2_CH1 --> 500Hz
+		PA1  --> TIM2_CH2 --> 1KHz
+		PB10 --> TIM2_CH3 --> 2KHz
+		PB2  --> TIM2_CH4 --> 4KHz  */
