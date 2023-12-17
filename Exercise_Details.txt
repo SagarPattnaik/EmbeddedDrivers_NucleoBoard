@@ -61,3 +61,14 @@ Bu ysing PWM Mode, generate PWM signals of 25%, 45%, 75% and 90% duty cycle on T
 How to generate pulse value for 40% of Duty cycle
 Lets imagine Period = 1 second ARR = 10000
 Then Pulse = 40% of ARR = 4000
+
+********************************* Button Interrupt ********************************
+
+How does a button issue interrupt to the processor in STM32?
+1. The button is connected to a GPIO Pin (For Nucleo board it is PC13).
+2. The GPIO pin should be configured to input mode.
+3. The link between a GPIO port and the relevant EXTI line (for PC13, it is EXTI15_10)
+must be established using the SYSCFG_EXTICRx register.
+4. Configure the trigger detection (falling/rising) for relevant EXTI line. This is 
+done via EXTI controller register.
+5. Implement the handler to service the interrupt.
