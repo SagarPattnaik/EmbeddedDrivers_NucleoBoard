@@ -100,36 +100,21 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart)
 
 }
 
-void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
+void HAL_CAN_MspInit(CAN_HandleTypeDef *hcan)
 {
-	GPIO_InitTypeDef tim2OC_ch_gpios;
-	/* 1. enable the peripheral clock for the timer2 peripheral */
-	__HAL_RCC_TIM2_CLK_ENABLE();
-	__HAL_RCC_GPIOA_CLK_ENABLE();
-	__HAL_RCC_GPIOB_CLK_ENABLE();
+	GPIO_InitTypeDef GPIO_InitStruct;
+	__HAL_RCC_CAN1_CLK_ENABLE();
 
-	/* 2. Configure gpios to behave as timer2 channel 1,2,3 and 4 */
-	/* 	PA0 --> TIM2_CH1
-		PA1 --> TIM2_CH2
-		PB10 --> TIM2_CH3
-		PB2 --> TIM2_CH4 */
-
-	tim2OC_ch_gpios.Pin = GPIO_PIN_0|GPIO_PIN_1;
-	tim2OC_ch_gpios.Mode = GPIO_MODE_AF_PP;
-	tim2OC_ch_gpios.Pull = GPIO_NOPULL;
-	tim2OC_ch_gpios.Speed = GPIO_SPEED_FREQ_LOW;
-	tim2OC_ch_gpios.Alternate = GPIO_AF1_TIM2;
-	HAL_GPIO_Init(GPIOA, &tim2OC_ch_gpios);
-
-	tim2OC_ch_gpios.Pin = GPIO_PIN_2|GPIO_PIN_10;
-	tim2OC_ch_gpios.Mode = GPIO_MODE_AF_PP;
-	tim2OC_ch_gpios.Pull = GPIO_NOPULL;
-	tim2OC_ch_gpios.Speed = GPIO_SPEED_FREQ_LOW;
-	tim2OC_ch_gpios.Alternate = GPIO_AF1_TIM2;
-	HAL_GPIO_Init(GPIOB, &tim2OC_ch_gpios);
-
-	/* 3. nvic settings */
-	HAL_NVIC_SetPriority(TIM2_IRQn,15,0);
-	HAL_NVIC_EnableIRQ(TIM2_IRQn);
+	/**CAN1 GPIO Configuration
+	PA11     ------> CAN1_RX
+	PA12     ------> CAN1_TX
+	*/
+	GPIO_InitStruct.Pin = GPIO_PIN_11|GPIO_PIN_12;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 }
+
 /* USER CODE END 1 */

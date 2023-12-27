@@ -41,8 +41,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-extern TIM_HandleTypeDef htimer6;
-extern TIM_HandleTypeDef htimer2;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -200,11 +199,4 @@ void SysTick_Handler(void)
 /* please refer to the startup file (startup_stm32f4xx.s).                    */
 /******************************************************************************/
 
-/* USER CODE BEGIN 1 */
 
-void TIM2_IRQHandler(void)
-{
-	HAL_TIM_IRQHandler(&htimer2);
-}
-
-/* USER CODE END 1 */

@@ -10,21 +10,17 @@
 #include "stm32f4xx_hal.h"
 #include "main.h"
 
-void SystemClock_Config_HSE(uint8_t clock_freq);
-void TIMER2_Init(void);
 void GPIO_Init(void);
-void UART2_Init(void);
 void Error_handler(void);
+void UART2_Init(void);
+void SystemClock_Config_HSE(uint8_t clock_freq);
+void CAN1_Init(void);
+void CAN1_Tx(void);
+void CAN1_Rx(void);
+void CAN_Filter_Config(void);
 
-
-TIM_HandleTypeDef htimer2;
 UART_HandleTypeDef huart2;
-
-volatile uint32_t pulse1_value = 25000; //to produce 500Hz
-volatile uint32_t pulse2_value = 12500; //to produce 1000HZ
-volatile uint32_t pulse3_value = 6250;  //to produce 2000Hz
-volatile uint32_t pulse4_value = 3125;  //to produce 4000Hz
-volatile uint32_t ccr_content;
+CAN_HandleTypeDef hcan1;
 
 int main(void)
 {
@@ -33,27 +29,16 @@ int main(void)
   SystemClock_Config_HSE(SYS_CLOCK_FREQ_50_MHZ);
   GPIO_Init(); 
   UART2_Init();
-  TIMER2_Init(); /* Initialize TIMER2 to Output Compare */
+  CAN1_Init();
+  CAN_Filter_Config();
 
-  if ( HAL_TIM_PWM_Start(&htimer2,TIM_CHANNEL_1) != HAL_OK)
+  if( HAL_CAN_Start(&hcan1) != HAL_OK)
   {
     Error_handler();
   }
 
-  if ( HAL_TIM_PWM_Start(&htimer2,TIM_CHANNEL_2) != HAL_OK)
-  {
-    Error_handler();
-  }
-
-  if ( HAL_TIM_PWM_Start(&htimer2,TIM_CHANNEL_3) != HAL_OK)
-  {
-    Error_handler();
-  }
-
-  if ( HAL_TIM_PWM_Start(&htimer2,TIM_CHANNEL_4) != HAL_OK)
-  {
-    Error_handler();
-  }
+  CAN1_Tx();
+  CAN1_Rx();
   while(1);
   return 0;
 }
@@ -145,6 +130,48 @@ void SystemClock_Config_HSE(uint8_t clock_freq)
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
+void CAN1_Tx(void)
+{
+  char msg[50];
+  CAN_TxHeaderTypeDef TxHeader;
+  uint32_t TxMailbox;
+  uint8_t our_message[5] = {'H','E','L','L','O'};
+
+  TxHeader.DLC = 5;
+  TxHeader.StdId = 0x65D;
+  TxHeader.IDE   = CAN_ID_STD;
+  TxHeader.RTR = CAN_RTR_DATA;
+
+  if( HAL_CAN_AddTxMessage(&hcan1,&TxHeader,our_message,&TxMailbox) != HAL_OK)
+  {
+    Error_handler();
+  }
+
+  while( HAL_CAN_IsTxMessagePending(&hcan1,TxMailbox));
+
+  sprintf(msg,"Message Transmitted\r\n");
+  HAL_UART_Transmit(&huart2,(uint8_t*)msg,strlen(msg),HAL_MAX_DELAY);
+}
+
+void CAN1_Rx(void)
+{
+
+}
+void CAN_Filter_Config(void)
+{
+
+}
+
+void GPIO_Init(void)
+{
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  GPIO_InitTypeDef ledgpio;
+  ledgpio.Pin = GPIO_PIN_5; /* PA5 in output mode */
+  ledgpio.Mode = GPIO_MODE_OUTPUT_PP;
+  ledgpio.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA,&ledgpio);
+}
+
 void UART2_Init(void)
 {
   huart2.Instance = USART2;
@@ -161,53 +188,30 @@ void UART2_Init(void)
   }
 }
 
-void TIMER2_Init(void)
+void CAN1_Init(void)
 {
-  TIM_OC_InitTypeDef tim2PWM_Config;
-  htimer2.Instance = TIM2;
-  htimer2.Init.Period = 10000-1;
-  htimer2.Init.Prescaler = 4;
+  hcan1.Instance = CAN1;
+  hcan1.Init.Mode = CAN_MODE_LOOPBACK;
+  hcan1.Init.AutoBusOff = ENABLE;
+  hcan1.Init.AutoRetransmission = ENABLE;
+  hcan1.Init.AutoWakeUp = DISABLE;
+  hcan1.Init.ReceiveFifoLocked = DISABLE;
+  hcan1.Init.TimeTriggeredMode = DISABLE;
+  hcan1.Init.TransmitFifoPriority = DISABLE;
 
-  if ( HAL_TIM_PWM_Init(&htimer2) != HAL_OK)
+  /* Settings related to CAN bit timings */
+  /* CAN1 is on APB1 bus. APB1 is 25Mhz as Sysclk is 50Mhz */
+  /* www.bittiming.can-wiki.info */
+  /* Lets run MCAN1 at 500Kbps */
+  hcan1.Init.Prescaler = 5;
+  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_8TQ;
+  hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
+
+  if ( HAL_CAN_Init (&hcan1) != HAL_OK)
   {
     Error_handler();
   }
-  memset(&tim2PWM_Config,0,sizeof(tim2PWM_Config));
-  tim2PWM_Config.OCMode = TIM_OCMODE_PWM1;
-  tim2PWM_Config.OCPolarity = TIM_OCPOLARITY_HIGH;
-
-  tim2PWM_Config.Pulse =  (htimer2.Init.Period * 25 ) /100;
-  if( HAL_TIM_PWM_ConfigChannel(&htimer2,&tim2PWM_Config,TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_handler();
-  }
-  tim2PWM_Config.Pulse =  (htimer2.Init.Period * 45 ) /100;
-  if( HAL_TIM_PWM_ConfigChannel(&htimer2,&tim2PWM_Config,TIM_CHANNEL_2) != HAL_OK)
-  {
-    Error_handler();
-  }
-
-  tim2PWM_Config.Pulse =  (htimer2.Init.Period * 75 ) /100;
-  if( HAL_TIM_PWM_ConfigChannel(&htimer2,&tim2PWM_Config,TIM_CHANNEL_3) != HAL_OK)
-  {
-    Error_handler();
-  }
-
-  tim2PWM_Config.Pulse =  (htimer2.Init.Period * 95 ) /100;
-  if( HAL_TIM_PWM_ConfigChannel(&htimer2,&tim2PWM_Config,TIM_CHANNEL_4) != HAL_OK)
-  {
-    Error_handler();
-  }
-}
-
-void GPIO_Init(void)
-{
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  GPIO_InitTypeDef ledgpio;
-  ledgpio.Pin = GPIO_PIN_5; /* PA5 in output mode */
-  ledgpio.Mode = GPIO_MODE_OUTPUT_PP;
-  ledgpio.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA,&ledgpio);
 }
 
 void Error_handler(void)
