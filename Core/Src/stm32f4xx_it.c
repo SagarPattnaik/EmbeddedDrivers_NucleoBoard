@@ -41,7 +41,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-
+extern CAN_HandleTypeDef hcan1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -190,6 +190,30 @@ void SysTick_Handler(void)
   /* USER CODE BEGIN SysTick_IRQn 1 */
 
   /* USER CODE END SysTick_IRQn 1 */
+}
+
+void CAN1_TX_IRQHandler(void)
+{
+	HAL_CAN_IRQHandler(&hcan1);
+
+}
+
+void CAN1_RX0_IRQHandler(void)
+{
+	HAL_CAN_IRQHandler(&hcan1);
+
+}
+
+void CAN1_RX1_IRQHandler(void)
+{
+	HAL_CAN_IRQHandler(&hcan1);
+
+}
+
+void CAN1_SCE_IRQHandler(void)
+{
+	HAL_CAN_IRQHandler(&hcan1);
+
 }
 
 /******************************************************************************/
