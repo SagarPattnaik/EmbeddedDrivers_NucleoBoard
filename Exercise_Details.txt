@@ -72,3 +72,13 @@ must be established using the SYSCFG_EXTICRx register.
 4. Configure the trigger detection (falling/rising) for relevant EXTI line. This is 
 done via EXTI controller register.
 5. Implement the handler to service the interrupt.
+
+*********************************** LowPowerMode **********************************
+
+Write an application in which TIM6 triggers interrupt for every 10ms and in the ISR
+of TIM6, send some data over UART2
+
+-> Measure the current consumption without sleep mode
+-> Measure the current consumption with sleep mode(Enter sleepmode using SLEEPONEXIT)
+-> Toggle PA12 inside Timer6 Interrupt and probe using logic analyzer to see how much 
+time it took to transmit UART2 message.

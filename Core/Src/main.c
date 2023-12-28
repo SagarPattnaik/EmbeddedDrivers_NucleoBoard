@@ -10,50 +10,34 @@
 #include "stm32f4xx_hal.h"
 #include "main.h"
 
-void SystemClock_Config_HSE(uint8_t clock_freq);
-void TIMER2_Init(void);
 void GPIO_Init(void);
-void UART2_Init(void);
 void Error_handler(void);
+void TIMER6_Init(void);
+void UART2_Init(void);
+void SystemClock_Config_HSE(uint8_t clock_freq);
 
 
-TIM_HandleTypeDef htimer2;
+TIM_HandleTypeDef htimer6;
 UART_HandleTypeDef huart2;
-
-volatile uint32_t pulse1_value = 25000; //to produce 500Hz
-volatile uint32_t pulse2_value = 12500; //to produce 1000HZ
-volatile uint32_t pulse3_value = 6250;  //to produce 2000Hz
-volatile uint32_t pulse4_value = 3125;  //to produce 4000Hz
-volatile uint32_t ccr_content;
+//some randomly generated text
+char some_data[] = "We are testing SLEEPONEXIT feature\r\n";
 
 int main(void)
 {
   HAL_Init();
   /* SystemClockConfig(SYS_CLOCK_FREQ_50_MHZ); */
-  SystemClock_Config_HSE(SYS_CLOCK_FREQ_50_MHZ);
+  /* SystemClock_Config_HSE(SYS_CLOCK_FREQ_50_MHZ); */
   GPIO_Init(); 
   UART2_Init();
-  TIMER2_Init(); /* Initialize TIMER2 to Output Compare */
+  TIMER6_Init(); /* Initialize TIMER6 to count 10ms */
 
-  if ( HAL_TIM_PWM_Start(&htimer2,TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_handler();
-  }
+	/* SCB->SCR |= ( 1 << 1); Sleep On Exit */
+	HAL_PWR_EnableSleepOnExit();
+  /* lets start with fresh Status register of Timer to avoid any spurious interrupts */
+  TIM6->SR = 0;
+	/* Lets start the timer in interrupt mode */
+	HAL_TIM_Base_Start_IT(&htimer6);
 
-  if ( HAL_TIM_PWM_Start(&htimer2,TIM_CHANNEL_2) != HAL_OK)
-  {
-    Error_handler();
-  }
-
-  if ( HAL_TIM_PWM_Start(&htimer2,TIM_CHANNEL_3) != HAL_OK)
-  {
-    Error_handler();
-  }
-
-  if ( HAL_TIM_PWM_Start(&htimer2,TIM_CHANNEL_4) != HAL_OK)
-  {
-    Error_handler();
-  }
   while(1);
   return 0;
 }
@@ -145,6 +129,22 @@ void SystemClock_Config_HSE(uint8_t clock_freq)
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
+void GPIO_Init(void)
+{
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  GPIO_InitTypeDef ledgpio;
+  /* PA5 LED in output mode */
+  ledgpio.Pin = GPIO_PIN_5; 
+  ledgpio.Mode = GPIO_MODE_OUTPUT_PP;
+  ledgpio.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA,&ledgpio);
+  /* PA12 for tracing in output mode */
+  ledgpio.Pin = GPIO_PIN_12;
+  ledgpio.Mode = GPIO_MODE_OUTPUT_PP;
+  ledgpio.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA,&ledgpio);
+}
+
 void UART2_Init(void)
 {
   huart2.Instance = USART2;
@@ -161,53 +161,24 @@ void UART2_Init(void)
   }
 }
 
-void TIMER2_Init(void)
+void TIMER6_Init(void)
 {
-  TIM_OC_InitTypeDef tim2PWM_Config;
-  htimer2.Instance = TIM2;
-  htimer2.Init.Period = 10000-1;
-  htimer2.Init.Prescaler = 4;
-
-  if ( HAL_TIM_PWM_Init(&htimer2) != HAL_OK)
-  {
-    Error_handler();
-  }
-  memset(&tim2PWM_Config,0,sizeof(tim2PWM_Config));
-  tim2PWM_Config.OCMode = TIM_OCMODE_PWM1;
-  tim2PWM_Config.OCPolarity = TIM_OCPOLARITY_HIGH;
-
-  tim2PWM_Config.Pulse =  (htimer2.Init.Period * 25 ) /100;
-  if( HAL_TIM_PWM_ConfigChannel(&htimer2,&tim2PWM_Config,TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_handler();
-  }
-  tim2PWM_Config.Pulse =  (htimer2.Init.Period * 45 ) /100;
-  if( HAL_TIM_PWM_ConfigChannel(&htimer2,&tim2PWM_Config,TIM_CHANNEL_2) != HAL_OK)
-  {
-    Error_handler();
-  }
-
-  tim2PWM_Config.Pulse =  (htimer2.Init.Period * 75 ) /100;
-  if( HAL_TIM_PWM_ConfigChannel(&htimer2,&tim2PWM_Config,TIM_CHANNEL_3) != HAL_OK)
-  {
-    Error_handler();
-  }
-
-  tim2PWM_Config.Pulse =  (htimer2.Init.Period * 95 ) /100;
-  if( HAL_TIM_PWM_ConfigChannel(&htimer2,&tim2PWM_Config,TIM_CHANNEL_4) != HAL_OK)
+  htimer6.Instance = TIM6;
+  /* SYSCLK 16 MHZ, time base required 10ms */
+  htimer6.Init.Prescaler = 4999;
+  htimer6.Init.Period = 32-1;
+  if( HAL_TIM_Base_Init(&htimer6) != HAL_OK )
   {
     Error_handler();
   }
 }
 
-void GPIO_Init(void)
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  GPIO_InitTypeDef ledgpio;
-  ledgpio.Pin = GPIO_PIN_5; /* PA5 in output mode */
-  ledgpio.Mode = GPIO_MODE_OUTPUT_PP;
-  ledgpio.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA,&ledgpio);
+  if ( HAL_UART_Transmit(&huart2,(uint8_t*)some_data,(uint16_t)strlen((char*)some_data),HAL_MAX_DELAY) != HAL_OK)
+  {
+    Error_handler();
+  }
 }
 
 void Error_handler(void)

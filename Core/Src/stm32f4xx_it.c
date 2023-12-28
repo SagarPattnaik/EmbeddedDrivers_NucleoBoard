@@ -42,7 +42,8 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 extern TIM_HandleTypeDef htimer6;
-extern TIM_HandleTypeDef htimer2;
+extern UART_HandleTypeDef huart2;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -202,9 +203,14 @@ void SysTick_Handler(void)
 
 /* USER CODE BEGIN 1 */
 
-void TIM2_IRQHandler(void)
-{
-	HAL_TIM_IRQHandler(&htimer2);
-}
 
+void TIM6_DAC_IRQHandler(void)
+{
+  /* For measurement purpose, we probe PA12 using Logic Analyzer */
+	HAL_GPIO_WritePin(GPIOA,GPIO_PIN_12,GPIO_PIN_SET);
+	HAL_TIM_IRQHandler(&htimer6);
+  /* From here the Period Ellapse callback function is called 
+  where we transmit using UART2 Tx*/
+	HAL_GPIO_WritePin(GPIOA,GPIO_PIN_12,GPIO_PIN_RESET);
+}
 /* USER CODE END 1 */
