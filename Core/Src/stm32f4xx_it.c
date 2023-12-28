@@ -42,6 +42,7 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 extern CAN_HandleTypeDef hcan1;
+extern TIM_HandleTypeDef htimer6;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -195,27 +196,35 @@ void SysTick_Handler(void)
 void CAN1_TX_IRQHandler(void)
 {
 	HAL_CAN_IRQHandler(&hcan1);
-
 }
 
 void CAN1_RX0_IRQHandler(void)
 {
 	HAL_CAN_IRQHandler(&hcan1);
-
 }
 
 void CAN1_RX1_IRQHandler(void)
 {
 	HAL_CAN_IRQHandler(&hcan1);
-
 }
 
 void CAN1_SCE_IRQHandler(void)
 {
 	HAL_CAN_IRQHandler(&hcan1);
-
 }
 
+void TIM6_DAC_IRQHandler(void)
+{
+	HAL_TIM_IRQHandler(&htimer6);
+}
+
+void EXTI15_10_IRQHandler(void)
+{
+  /* Start the timer when button is pushed PC13 */
+  HAL_TIM_Base_Start_IT(&htimer6);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
+
+}
 /******************************************************************************/
 /* STM32F4xx Peripheral Interrupt Handlers                                    */
 /* Add here the Interrupt Handlers for the used peripherals.                  */
