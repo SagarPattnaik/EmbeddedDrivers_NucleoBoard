@@ -82,3 +82,50 @@ of TIM6, send some data over UART2
 -> Measure the current consumption with sleep mode(Enter sleepmode using SLEEPONEXIT)
 -> Toggle PA12 inside Timer6 Interrupt and probe using logic analyzer to see how much 
 time it took to transmit UART2 message.
+
+******************************* CurrentReductionTips ******************************
+Tips to reduce the power consumption
+UART2,TIM6,GPIO peripherals used
+
+------------------------------------------------------
+                When HCLK is 50MHz
+------------------------------------------------------
+Without SLEEPONEXIT/WFI/WFE Current consumption : 11mA
+With SLEEPONEXIT/WFI/WFE Current consumption : 7mA
+
+------------------------------------------------------
+                When HCLK is 50MHz
+------------------------------------------------------
+Without SLEEPONEXIT/WFI/WFE Current consumption : 7mA
+With SLEEPONEXIT/WFI/WFE Current consumption : 3mA
+
+------------------------------------------------------
+    When HCLK is 16MHz  and UART2 Baudrate 230400
+------------------------------------------------------
+With SLEEPONEXIT/WFI/WFE Current consumption : 2.45mA
+
+------------------------------------------------------
+    When HCLK is 16MHz  and UART2 Baudrate 460800
+------------------------------------------------------
+With SLEEPONEXIT/WFI/WFE Current consumption : 2.35mA
+
+------------------------------------------------------
+    When HCLK is 16MHz  and UART2 Baudrate 460800
+	+Disabling all peripherals of AHBx and APBx domain 
+	during sleep. UART2+GPIO
+------------------------------------------------------
+We disabled clocking for GPIO.
+Use	 __HAL_RCC_USART2_CLK_SLEEP_DISABLE(); inside 
+USTART2 MSPinit
+With SLEEPONEXIT/WFI/WFE Current consumption : 2.03mA
+
+------------------------------------------------------
+    When HCLK is 16MHz  and UART2 Baudrate 460800
+	+Disabling all peripherals of AHBx and APBx domain 
+	during sleep. UART2+GPIO
+	IO in Analog Mode
+------------------------------------------------------
+We disabled clocking for GPIO.
+Use	 __HAL_RCC_USART2_CLK_SLEEP_DISABLE(); inside 
+USTART2 MSPinit
+With SLEEPONEXIT/WFI/WFE Current consumption : 1.86mA
