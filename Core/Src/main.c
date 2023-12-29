@@ -24,12 +24,12 @@ char some_data[] = "We are testing WFI instructiion\r\n";
 int main(void)
 {
 	char msg[50];
+  GPIO_Init(); 
   HAL_Init();
   /* SystemClockConfig(SYS_CLOCK_FREQ_50_MHZ); */
   /* SystemClock_Config_HSE(SYS_CLOCK_FREQ_50_MHZ); */
-  GPIO_Init(); 
-	GPIO_AnalogConfig();
   UART2_Init();
+	GPIO_AnalogConfig();
 
 	while(1)
 	{
@@ -40,7 +40,7 @@ int main(void)
 		/* Systick is not required so disabled it before going to sleep*/
 		HAL_SuspendTick();
     
-    //going to sleep
+		/* going to sleep here */
     __WFE();
 
     //When button is pressed, an event is generated. 
