@@ -23,6 +23,7 @@ char some_data[] = "We are testing WFI instructiion\r\n";
 
 int main(void)
 {
+	char msg[50];
   HAL_Init();
   /* SystemClockConfig(SYS_CLOCK_FREQ_50_MHZ); */
   /* SystemClock_Config_HSE(SYS_CLOCK_FREQ_50_MHZ); */
@@ -32,9 +33,26 @@ int main(void)
 
 	while(1)
 	{
-		//going to sleep
-		__WFI();
-		//MCU resumes here when it wakes up
+    memset(msg,0,sizeof(msg));
+    sprintf(msg,"Going to Sleep !\r\n");
+    HAL_UART_Transmit(&huart2,(uint8_t*)msg,(uint16_t)strlen((char*)msg),HAL_MAX_DELAY);
+
+		/* Systick is not required so disabled it before going to sleep*/
+		HAL_SuspendTick();
+    
+    //going to sleep
+    __WFE();
+
+    //When button is pressed, an event is generated. 
+    //MCU resumes here when it wakes up
+		
+    /* Continues from here when wakes up */
+		/* Enable the Systick */
+		HAL_ResumeTick();
+    
+    memset(msg,0,sizeof(msg));
+    sprintf(msg,"Woke up !\r\n");
+    HAL_UART_Transmit(&huart2,(uint8_t*)msg,(uint16_t)strlen((char*)msg),HAL_MAX_DELAY);
 	}
   return 0;
 }
@@ -156,28 +174,16 @@ void GPIO_Init(void)
   /* We cant disable PortC because PC13 is our source of interrupt */
   __HAL_RCC_GPIOA_CLK_SLEEP_DISABLE();
 
-	GPIO_InitTypeDef ledgpio, buttongpio;
-#if 0
-  /* PA5 LED in output mode */
-  ledgpio.Pin = GPIO_PIN_5; 
-  ledgpio.Mode = GPIO_MODE_OUTPUT_PP;
-  ledgpio.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA,&ledgpio);
-  /* PA12 for tracing in output mode */
-  ledgpio.Pin = GPIO_PIN_12;
-  ledgpio.Mode = GPIO_MODE_OUTPUT_PP;
-  ledgpio.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA,&ledgpio);
-#endif
+	GPIO_InitTypeDef buttongpio;
   /* PC13 for Button in input mode */
   buttongpio.Pin = GPIO_PIN_13;
-  buttongpio.Mode = GPIO_MODE_IT_FALLING;
+  buttongpio.Mode = GPIO_MODE_EVT_FALLING;
   buttongpio.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC,&buttongpio);
-
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn,15,0);
-  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-
+  /* Set an event when button is pressed */
+  /*   HAL_NVIC_SetPriority(EXTI15_10_IRQn,15,0);
+    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+  */
 }
 
 void UART2_Init(void)
@@ -192,14 +198,6 @@ void UART2_Init(void)
   if ( HAL_UART_Init(&huart2) != HAL_OK )
   {
     //There is a problem
-    Error_handler();
-  }
-}
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  if ( HAL_UART_Transmit(&huart2,(uint8_t*)some_data,(uint16_t)strlen((char*)some_data),HAL_MAX_DELAY) != HAL_OK)
-  {
     Error_handler();
   }
 }
