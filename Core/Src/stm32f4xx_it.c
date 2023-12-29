@@ -203,14 +203,9 @@ void SysTick_Handler(void)
 
 /* USER CODE BEGIN 1 */
 
-
-void TIM6_DAC_IRQHandler(void)
+void EXTI15_10_IRQHandler(void)
 {
-  /* For measurement purpose, we probe PA12 using Logic Analyzer */
-	HAL_GPIO_WritePin(GPIOA,GPIO_PIN_12,GPIO_PIN_SET);
-	HAL_TIM_IRQHandler(&htimer6);
-  /* From here the Period Ellapse callback function is called 
-  where we transmit using UART2 Tx*/
-	HAL_GPIO_WritePin(GPIOA,GPIO_PIN_12,GPIO_PIN_RESET);
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
 }
+
 /* USER CODE END 1 */

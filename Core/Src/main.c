@@ -12,15 +12,14 @@
 
 void GPIO_Init(void);
 void Error_handler(void);
-void TIMER6_Init(void);
 void UART2_Init(void);
 void SystemClock_Config_HSE(uint8_t clock_freq);
-
+void GPIO_AnalogConfig(void);
 
 TIM_HandleTypeDef htimer6;
 UART_HandleTypeDef huart2;
 //some randomly generated text
-char some_data[] = "We are testing SLEEPONEXIT feature\r\n";
+char some_data[] = "We are testing WFI instructiion\r\n";
 
 int main(void)
 {
@@ -28,17 +27,15 @@ int main(void)
   /* SystemClockConfig(SYS_CLOCK_FREQ_50_MHZ); */
   /* SystemClock_Config_HSE(SYS_CLOCK_FREQ_50_MHZ); */
   GPIO_Init(); 
+	GPIO_AnalogConfig();
   UART2_Init();
-  TIMER6_Init(); /* Initialize TIMER6 to count 10ms */
 
-	/* SCB->SCR |= ( 1 << 1); Sleep On Exit */
-	HAL_PWR_EnableSleepOnExit();
-  /* lets start with fresh Status register of Timer to avoid any spurious interrupts */
-  TIM6->SR = 0;
-	/* Lets start the timer in interrupt mode */
-	HAL_TIM_Base_Start_IT(&htimer6);
-
-  while(1);
+	while(1)
+	{
+		//going to sleep
+		__WFI();
+		//MCU resumes here when it wakes up
+	}
   return 0;
 }
 
@@ -129,10 +126,38 @@ void SystemClock_Config_HSE(uint8_t clock_freq)
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
+void GPIO_AnalogConfig(void)
+{
+  GPIO_InitTypeDef GpioA,GpioC;
+  uint32_t gpio_pins = GPIO_PIN_0 | GPIO_PIN_1 |GPIO_PIN_4 | \
+              GPIO_PIN_5 | GPIO_PIN_6 |GPIO_PIN_7 |\
+              GPIO_PIN_8 | GPIO_PIN_9 |GPIO_PIN_10 |\
+              GPIO_PIN_11 | GPIO_PIN_12 |GPIO_PIN_13 | \
+              GPIO_PIN_14 | GPIO_PIN_15;
+  GpioA.Pin = gpio_pins;
+  GpioA.Mode = GPIO_MODE_ANALOG;
+  HAL_GPIO_Init(GPIOA,&GpioA);
+
+  gpio_pins = GPIO_PIN_0 | GPIO_PIN_1 |GPIO_PIN_2|  \
+          GPIO_PIN_3 | GPIO_PIN_4 |  GPIO_PIN_5 | \
+          GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | \
+          GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 | \
+          GPIO_PIN_12 | GPIO_PIN_14 | GPIO_PIN_15;
+
+  GpioC.Pin = gpio_pins;
+  GpioC.Mode = GPIO_MODE_ANALOG;
+  HAL_GPIO_Init(GPIOC,&GpioC);
+}
+
 void GPIO_Init(void)
 {
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  GPIO_InitTypeDef ledgpio;
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  /* We cant disable PortC because PC13 is our source of interrupt */
+  __HAL_RCC_GPIOA_CLK_SLEEP_DISABLE();
+
+	GPIO_InitTypeDef ledgpio, buttongpio;
+#if 0
   /* PA5 LED in output mode */
   ledgpio.Pin = GPIO_PIN_5; 
   ledgpio.Mode = GPIO_MODE_OUTPUT_PP;
@@ -143,6 +168,16 @@ void GPIO_Init(void)
   ledgpio.Mode = GPIO_MODE_OUTPUT_PP;
   ledgpio.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA,&ledgpio);
+#endif
+  /* PC13 for Button in input mode */
+  buttongpio.Pin = GPIO_PIN_13;
+  buttongpio.Mode = GPIO_MODE_IT_FALLING;
+  buttongpio.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC,&buttongpio);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn,15,0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
 }
 
 void UART2_Init(void)
@@ -161,19 +196,7 @@ void UART2_Init(void)
   }
 }
 
-void TIMER6_Init(void)
-{
-  htimer6.Instance = TIM6;
-  /* SYSCLK 16 MHZ, time base required 10ms */
-  htimer6.Init.Prescaler = 4999;
-  htimer6.Init.Period = 32-1;
-  if( HAL_TIM_Base_Init(&htimer6) != HAL_OK )
-  {
-    Error_handler();
-  }
-}
-
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   if ( HAL_UART_Transmit(&huart2,(uint8_t*)some_data,(uint16_t)strlen((char*)some_data),HAL_MAX_DELAY) != HAL_OK)
   {
