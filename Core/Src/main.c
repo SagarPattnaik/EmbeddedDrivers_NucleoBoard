@@ -26,8 +26,8 @@ UART_HandleTypeDef huart2;
 CAN_HandleTypeDef hcan1;
 TIM_HandleTypeDef htimer6;
 uint8_t req_counter = 0;
-CAN_RxHeaderTypeDef RxHeader;
 uint8_t led_no=0;
+CAN_RxHeaderTypeDef RxHeader;
 
 int main(void)
 {
@@ -189,7 +189,6 @@ void GPIO_Init(void)
 {
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
   
   /* PA5 LED output */
   GPIO_InitTypeDef ledgpio;
@@ -198,16 +197,11 @@ void GPIO_Init(void)
   ledgpio.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA,&ledgpio);
   
-  /* PC6, PC8, PC9 and PB8 as LED output */
-  ledgpio.Pin = GPIO_PIN_9 | GPIO_PIN_8 | GPIO_PIN_6;
+  /* PC6, PC8, as LED output */
+  ledgpio.Pin = GPIO_PIN_8 | GPIO_PIN_6;
   ledgpio.Mode = GPIO_MODE_OUTPUT_PP;
   ledgpio.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC,&ledgpio);
-
-  ledgpio.Pin = GPIO_PIN_8;
-  ledgpio.Mode = GPIO_MODE_OUTPUT_PP;
-  ledgpio.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOB,&ledgpio);
 
   /* PC13 as Button input */
   ledgpio.Pin = GPIO_PIN_13;
@@ -322,7 +316,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   }
   else
   {
-    Error_handler();
+    /* Do Nothing */
   }
 
   HAL_UART_Transmit(&huart2,(uint8_t*)msg,strlen(msg),HAL_MAX_DELAY);
@@ -340,6 +334,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   CAN_TxHeaderTypeDef TxHeader;
   uint32_t TxMailbox;
   uint8_t message; //no meaning for data frame
+  /* char msg[50]; */
 
   if ( req_counter  == 4)
   {
@@ -358,7 +353,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   else
   {
     CAN1_Tx();
-    req_counter++;
+    ++req_counter;
   }
 }
 
@@ -369,26 +364,18 @@ void LED_Manage_Output(uint8_t led_no)
   case 1 :
     HAL_GPIO_WritePin(LED1_PORT,LED1_PIN_NO,GPIO_PIN_SET);
     HAL_GPIO_WritePin(LED2_PORT,LED2_PIN_NO,GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LED3_PORT,LED3_PIN_NO,GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LED4_PORT,LED4_PIN_NO,GPIO_PIN_RESET);
     break;
   case 2 :
     HAL_GPIO_WritePin(LED1_PORT,LED1_PIN_NO,GPIO_PIN_RESET);
     HAL_GPIO_WritePin(LED2_PORT,LED2_PIN_NO,GPIO_PIN_SET);
-    HAL_GPIO_WritePin(LED3_PORT,LED3_PIN_NO,GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LED4_PORT,LED4_PIN_NO,GPIO_PIN_RESET);
     break;
   case 3 :
-    HAL_GPIO_WritePin(LED1_PORT,LED1_PIN_NO,GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LED1_PORT,LED1_PIN_NO,GPIO_PIN_SET);
     HAL_GPIO_WritePin(LED2_PORT,LED2_PIN_NO,GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LED3_PORT,LED3_PIN_NO,GPIO_PIN_SET);
-    HAL_GPIO_WritePin(LED4_PORT,LED4_PIN_NO,GPIO_PIN_RESET);
     break;
   case 4 :
     HAL_GPIO_WritePin(LED1_PORT,LED1_PIN_NO,GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LED2_PORT,LED2_PIN_NO,GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LED3_PORT,LED3_PIN_NO,GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LED4_PORT,LED4_PIN_NO,GPIO_PIN_SET);
+    HAL_GPIO_WritePin(LED2_PORT,LED2_PIN_NO,GPIO_PIN_SET);
     break;
   }
 }
