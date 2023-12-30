@@ -6,6 +6,8 @@
 */
 
 #include<string.h>
+#include<stdint.h>
+#include<stdarg.h>
 #include<stdio.h>
 #include "stm32f4xx_hal.h"
 #include "main.h"
@@ -14,46 +16,82 @@ void GPIO_Init(void);
 void Error_handler(void);
 void UART2_Init(void);
 void SystemClock_Config_HSE(uint8_t clock_freq);
-void GPIO_AnalogConfig(void);
 
 TIM_HandleTypeDef htimer6;
 UART_HandleTypeDef huart2;
-//some randomly generated text
-char some_data[] = "We are testing WFI instructiion\r\n";
+
+void printmsg(char *format,...)
+{
+  char str[80];
+  /*Extract the the argument list using VA apis */
+  va_list args;
+  va_start(args, format);
+  vsprintf(str, format,args);
+  HAL_UART_Transmit(&huart2,(uint8_t *)str, strlen(str),HAL_MAX_DELAY);
+  va_end(args);
+}
 
 int main(void)
 {
-	char msg[50];
-  GPIO_Init(); 
+  uint32_t * pBackupSRAMbase=0;
+	char write_buf[] = "Hello";
+
   HAL_Init();
+  GPIO_Init(); 
   /* SystemClockConfig(SYS_CLOCK_FREQ_50_MHZ); */
-  /* SystemClock_Config_HSE(SYS_CLOCK_FREQ_50_MHZ); */
+  SystemClock_Config_HSE(SYS_CLOCK_FREQ_50_MHZ);
   UART2_Init();
-	GPIO_AnalogConfig();
 
-	while(1)
-	{
-    memset(msg,0,sizeof(msg));
-    sprintf(msg,"Going to Sleep !\r\n");
-    HAL_UART_Transmit(&huart2,(uint8_t*)msg,(uint16_t)strlen((char*)msg),HAL_MAX_DELAY);
+	//1. Turn on the clock in RCC register for backup sram
+	__HAL_RCC_BKPSRAM_CLK_ENABLE();
 
-		/* Systick is not required so disabled it before going to sleep*/
-		HAL_SuspendTick();
-    
-		/* going to sleep here */
-    __WFE();
+	//2. Enable Write access to the backup domain
+	HAL_PWR_EnableBkUpAccess();
+  pBackupSRAMbase = (uint32_t*)BKPSRAM_BASE;
+	
+  //Enable clock for PWR Controller block
+	__HAL_RCC_PWR_CLK_ENABLE();
 
-    //When button is pressed, an event is generated. 
-    //MCU resumes here when it wakes up
-		
-    /* Continues from here when wakes up */
-		/* Enable the Systick */
-		HAL_ResumeTick();
-    
-    memset(msg,0,sizeof(msg));
-    sprintf(msg,"Woke up !\r\n");
-    HAL_UART_Transmit(&huart2,(uint8_t*)msg,(uint16_t)strlen((char*)msg),HAL_MAX_DELAY);
-	}
+  if(__HAL_PWR_GET_FLAG(PWR_FLAG_SB) != RESET)
+  { /* Enter here only when reset from standby mode */
+    __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB); /* Clear standby flag */
+    __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU); /* Clear Wakeup flag */
+
+    printmsg("woke up from the standby mode\r\n");
+    uint8_t data = (uint8_t)*pBackupSRAMbase;
+    if(data != 'H')
+    {
+      printmsg("Backup SRAM data is Invalid\r\n");
+    }
+    else
+    {
+      printmsg("Backup SRAM data is Valid \r\n");
+    }
+  }
+  else
+  { 
+    printmsg("PowerOnReset: Writting to BackUpSRAM\r\n");
+    /* Default path: Write Backup SRAM to Hello */
+    for(uint32_t i =0 ; i < strlen(write_buf)+1 ; i++)
+    {
+        *(pBackupSRAMbase+i) = write_buf[i];
+    }
+  }
+
+  printmsg("Press the user button to enter standby mode\r\n");
+  while(HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_13) != GPIO_PIN_RESET) {}
+  
+  //when user pushes the user button, it comes here
+  printmsg("Going to Standby mode\r\n");
+  
+  //Enable the wakeup pin 1 PA0 in pwr_csr register
+  HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);
+  //Enable backup voltage reg.
+  HAL_PWREx_EnableBkUpReg();
+  // Enter StandBy Mode
+  HAL_PWR_EnterSTANDBYMode();
+  
+  while(1){}
   return 0;
 }
 
@@ -144,52 +182,21 @@ void SystemClock_Config_HSE(uint8_t clock_freq)
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
-void GPIO_AnalogConfig(void)
-{
-  GPIO_InitTypeDef GpioA,GpioC;
-  uint32_t gpio_pins = GPIO_PIN_0 | GPIO_PIN_1 |GPIO_PIN_4 | \
-              GPIO_PIN_5 | GPIO_PIN_6 |GPIO_PIN_7 |\
-              GPIO_PIN_8 | GPIO_PIN_9 |GPIO_PIN_10 |\
-              GPIO_PIN_11 | GPIO_PIN_12 |GPIO_PIN_13 | \
-              GPIO_PIN_14 | GPIO_PIN_15;
-  GpioA.Pin = gpio_pins;
-  GpioA.Mode = GPIO_MODE_ANALOG;
-  HAL_GPIO_Init(GPIOA,&GpioA);
-
-  gpio_pins = GPIO_PIN_0 | GPIO_PIN_1 |GPIO_PIN_2|  \
-          GPIO_PIN_3 | GPIO_PIN_4 |  GPIO_PIN_5 | \
-          GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | \
-          GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 | \
-          GPIO_PIN_12 | GPIO_PIN_14 | GPIO_PIN_15;
-
-  GpioC.Pin = gpio_pins;
-  GpioC.Mode = GPIO_MODE_ANALOG;
-  HAL_GPIO_Init(GPIOC,&GpioC);
-}
-
 void GPIO_Init(void)
 {
-  __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
-  /* We cant disable PortC because PC13 is our source of interrupt */
-  __HAL_RCC_GPIOA_CLK_SLEEP_DISABLE();
-
-	GPIO_InitTypeDef buttongpio;
-  /* PC13 for Button in input mode */
+  GPIO_InitTypeDef  buttongpio;
+  /* PC13 Button in Input Mode */
   buttongpio.Pin = GPIO_PIN_13;
-  buttongpio.Mode = GPIO_MODE_EVT_FALLING;
+  buttongpio.Mode = GPIO_MODE_INPUT;
   buttongpio.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC,&buttongpio);
-  /* Set an event when button is pressed */
-  /*   HAL_NVIC_SetPriority(EXTI15_10_IRQn,15,0);
-    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-  */
 }
 
 void UART2_Init(void)
 {
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 230400;
+  huart2.Init.BaudRate = 115200;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
